@@ -1033,7 +1033,7 @@ end
 #
 #    Swift / Objective-C Code syntax parser / checker for Secure Filesystem
 #
-#    - this check logic is activated when securestorage option is enabled
+#    - this check logic is activated when securefile option is enabled
 #    - Swift code is checked by ScanSwiftAST external tool (git checkout & compile)
 #    - Objective-C code is checked by Clang-AST external tool
 #
@@ -2433,7 +2433,7 @@ module SecureFilesystem
         else
             self.log("\n ❌ Secure File I/O methods scan completed: #{all_findings.size} sensitive issue(s) found".bold, :red)
 
-            if $action == "securestorage-verify"
+            if $action == "securefile-verify"
                 false
             else
                 print "\n ==> If you use these methods, file contents cannot be written/read normally.\n Do you want to continue anyway (is it intended)? Type 'YES' to proceed: ".yellow.bold
@@ -2514,8 +2514,8 @@ class AppSealingCLI
       exit(0)
     end
 
-    # --- securestorage-verify handler ---
-    if @argv.length >= 1 && @argv[0] == "securestorage-verify"
+    # --- securefile-verify handler ---
+    if @argv.length >= 1 && @argv[0] == "securefile-verify"
       @options[:action]       = @argv[0]
       @options[:project_path] = @argv[1]
 
@@ -2534,12 +2534,12 @@ class AppSealingCLI
 
     # --- IPA argument validation ---
     if @argv.length < 1 || File.extname(@argv[0]).delete(".").downcase != "ipa"
-      puts ".\n.\nusage: generate_hash YourApp.IPA [-url_scheme=url] [-camera=NSCameraUsageDescription] [-antihook=enable|disable] [-antiswizzle=enable|disable] [-securestorage=enable|disable]".yellow
+      puts ".\n.\nusage: generate_hash YourApp.IPA [-url_scheme=url] [-camera=NSCameraUsageDescription] [-antihook=enable|disable] [-antiswizzle=enable|disable] [-securefile=enable|disable]".yellow
       puts "         url : URL scheme for Unreal app [optional]".yellow
       puts "         camera : camera usage description string to put into Info.plist [optional]".yellow
       puts "         antihook : enable or disable anti-hooking feature [optional, default=enabled]".yellow
       puts "         antiswizzle : enable or disable anti-swizzling feature [optional, default=disabled]".yellow
-      puts "         securestorage : enable or disable secure filesystem (automatic file encryption) [optional, default=disabled]".yellow
+      puts "         securefile : enable or disable secure filesystem (automatic file encryption) [optional, default=disabled]".yellow
       puts ".\n.\n.\n".yellow
       exit(false)
     end
@@ -2588,8 +2588,8 @@ class AppSealingCLI
         @options[:antiswizzle] = value
         puts "[Anti-Swizzling]     = #{value}"
         debug_log "Parsed anti-swizzling option: #{value}" if defined?(debug_log)
-      when "-securestorage"
-        @options[:securestorage] = value
+      when "-securefile"
+        @options[:securefile] = value
         puts "[Secure-Filesystem]  = #{value}"
         debug_log "Parsed secure filesystem option: #{value}" if defined?(debug_log)
       end
@@ -4195,7 +4195,7 @@ class CertificateExtractor
       @certificate_summary += "##&##*AHDISABLE\n"
       debug_log "Anti-hook flag added (disabled)" if defined?(debug_log)
     end
-    if defined?($securestorage) && $securestorage == 'enable'
+    if defined?($securefile) && $securefile == 'enable'
       @certificate_summary += "##&##*SFSENABLE\n"
       debug_log "Secure Filesystem flag added (enabled)" if defined?(debug_log)
     end
@@ -4248,7 +4248,7 @@ begin
     ipa_path = $cli_ipa_path
     raise "IPA file does not exist: #{ipa_path}" unless File.exist?(ipa_path)
 
-    $securestorage = $cli_options[:securestorage]
+    $securefile = $cli_options[:securefile]
 
     #========================================================================================
     # Step 1: Secure File I/O API Verification
@@ -4263,17 +4263,17 @@ begin
             ENV.key?("CIRCLECI")                # CircleCI
         )
 
-    force_secure = ENV["FORCE_SECURE_STORAGE"].to_s.upcase == "TRUE"
+    force_secure = ENV["FORCE_SECURE_FILESYSTEM"].to_s.upcase == "TRUE"
 
     # 1. FORCE_SECURE_FILESYSTEM has absolute priority in CI
     if ci_environment && force_secure
-        $securestorage = "enable"
+        $securefile = "enable"
 
         puts "\n[STEP #{$current_step += 1}] Secure Filesystem forcibly enabled (FORCE_SECURE_FILESYSTEM=TRUE).".bold.yellow
-        puts "    [INFO] CI environment detected. SwiftSyntax verification skipped. Force applying Secure Storage feature".yellow
+        puts "    [INFO] CI environment detected. SwiftSyntax verification skipped.".yellow
 
-    # 2. Normal securestorage enable flow
-    elsif defined?($securestorage) && $securestorage == "enable"
+    # 2. Normal securefile enable flow
+    elsif defined?($securefile) && $securefile == "enable"
         puts "\n[STEP #{$current_step += 1}] Verifying whether the Secure Filesystem is using only allowed methods...".bold.yellow
 
         unless File.exist?(SWIFTPM_TARGET)
@@ -4292,11 +4292,11 @@ begin
 
             if answer == "n" || answer == "no"
                 puts "    [INFO] Skipping Secure FileIO verification. Secure Filesystem will be considered disabled.".yellow
-                $securestorage = "disable"
+                $securefile = "disable"
             end
         end
 
-        if $securestorage == "enable"
+        if $securefile == "enable"
             project_path = File.expand_path(File.join(__dir__, ".."))
             unless SecureFilesystem.check_secure_fileio(project_path)
                 SecureFilesystem.print_allowed_methods
@@ -4306,7 +4306,7 @@ begin
 
     # 3. Feature disabled
     else
-        puts "    [INFO] Secure Filesystem feature is disabled. To enable, use '-securestorage=enable'.".yellow
+        puts "    [INFO] Secure Filesystem feature is disabled. To enable, use '-securefile=enable'.".yellow
     end
 
     #========================================================================================
