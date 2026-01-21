@@ -77,7 +77,7 @@ cp "$PROFILE_SRC" "$APP_PATH/embedded.mobileprovision"
 # [5] Run generate_hash (IPA-based, as designed)
 # -------------------------------------------------------------------
 echo "[INFO] Running generate_hash"
-ruby "$GENERATE_HASH" "$IPA_PATH" -securefile=enable
+ruby "$GENERATE_HASH" "$IPA_PATH"
 
 # -------------------------------------------------------------------
 # [6] Upload to App Store Connect

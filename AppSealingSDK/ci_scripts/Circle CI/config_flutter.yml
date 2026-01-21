@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-and-upload:
     macos:
-      xcode: 16.1.0
+      xcode: 16.4
     environment:
       TEAM_ID: "22X77ENQ2H"
       APPLE_ID: "puzznic@inka.co.kr"
@@ -166,7 +166,7 @@ jobs:
             <plist version="1.0">
             <dict>
                 <key>method</key>
-                <string>app-store</string>
+                <string>app-store-connect</string>
                 <key>teamID</key>
                 <string>${TEAM_ID}</string>
                 <key>signingStyle</key>

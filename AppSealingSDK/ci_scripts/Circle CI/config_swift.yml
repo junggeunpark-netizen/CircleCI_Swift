@@ -3,7 +3,7 @@ version: 2.1
 executors:
   mac:
     macos:
-      xcode: 16.0.0
+      xcode: 16.4
     working_directory: /Users/distiller/project
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
             <plist version="1.0">
             <dict>
                 <key>method</key>
-                <string>app-store</string>
+                <string>app-store-connect</string>
                 <key>teamID</key>
                 <string>${TEAM_ID}</string>
                 <key>signingStyle</key>
@@ -146,25 +146,48 @@ jobs:
       - run:
           name: Generate Security Hash
           command: |
-            HASH_SCRIPT=$(find . -name "generate_hash" -path "$HASH_SCRIPT_PATH")
-            
+            echo "🔍 Searching generate_hash script..."
+
+            HASH_SCRIPT=$(find . -type f -name "generate_hash" | head -n 1)
+
             if [ -z "$HASH_SCRIPT" ]; then
-              echo "❌ ERROR: generate_hash script not found in specified path"
+              echo "❌ ERROR: generate_hash script not found"
               exit 1
             fi
-            
+
             chmod +x "$HASH_SCRIPT"
-            "$HASH_SCRIPT" "./artifacts/${SCHEME_NAME}.ipa"
-                        
+
+            ABS_IPA_PATH="$(pwd)/artifacts/${SCHEME_NAME}.ipa"
+
+            if [ ! -f "$ABS_IPA_PATH" ]; then
+              echo "❌ ERROR: IPA not found at $ABS_IPA_PATH"
+              exit 1
+            fi
+
+            echo "✅ Using generate_hash: $HASH_SCRIPT"
+            echo "✅ Target IPA (absolute): $ABS_IPA_PATH"
+
+            "$HASH_SCRIPT" "$ABS_IPA_PATH"
+
       - run:
           name: Upload to App Store Connect
           command: |
+            ABS_IPA_PATH="$(pwd)/artifacts/${SCHEME_NAME}.ipa"
+
+            if [ ! -f "$ABS_IPA_PATH" ]; then
+              echo "❌ ERROR: IPA not found at $ABS_IPA_PATH"
+              exit 1
+            fi
+
+            echo "🚀 Uploading IPA: $ABS_IPA_PATH"
+
             xcrun altool --upload-app \
               --type ios \
-              --file "./artifacts/${SCHEME_NAME}.ipa" \
+              --file "$ABS_IPA_PATH" \
               --username "$APPLE_ID" \
               --password "$APP_SPECIFIC_PASSWORD" \
               --verbose
+
 
 workflows:
   version: 2
