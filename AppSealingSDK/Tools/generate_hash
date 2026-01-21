@@ -1267,7 +1267,7 @@ UNSAFE_POSIX_FUNCS = %w[open close read write lseek fseek fread fwrite fflush tr
 SWIFTPM_DIR    = File.expand_path("ScanSwiftAST", Dir.pwd)
 SWIFTPM_TARGET = File.join(SWIFTPM_DIR, ".build", "release", "ScanSwiftAST")
 
-module securestoragesystem
+module SecureFilesystem
 
     #----------------------------------------------------------------------------------------
     #    Logging (supports indent integer)
@@ -2520,13 +2520,13 @@ class AppSealingCLI
       @options[:project_path] = @argv[1]
 
       $action = @options[:action]
-      unless securestoragesystem.check_secure_fileio(@options[:project_path])
+      unless SecureFilesystem.check_secure_fileio(@options[:project_path])
         print "\n ==> If you use these methods, file contents cannot be written/read normally.\n" \
               " Do you want to view the allowed methods list? Type 'Y' to print : ".yellow.bold
         input = STDIN.gets.strip
         if input == "Y" || input == "y"
           puts " "
-          securestoragesystem.print_allowed_methods
+          SecureFilesystem.print_allowed_methods
         end
       end
       exit(0)
@@ -4298,8 +4298,8 @@ begin
 
         if $securestorage == "enable"
             project_path = File.expand_path(File.join(__dir__, ".."))
-            unless securestoragesystem.check_secure_fileio(project_path)
-                securestoragesystem.print_allowed_methods
+            unless SecureFilesystem.check_secure_fileio(project_path)
+                SecureFilesystem.print_allowed_methods
                 exit(0)
             end
         end
