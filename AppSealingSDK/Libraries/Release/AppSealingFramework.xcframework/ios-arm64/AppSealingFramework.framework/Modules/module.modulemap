@@ -1,0 +1,6 @@
+framework module AppSealingFramework {
+  umbrella header "AppSealingFramework.h"
+  export *
+
+  module * { export * }
+}
